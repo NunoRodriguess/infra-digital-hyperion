@@ -29,6 +29,10 @@ airflow:
   config:
     AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "False"
     AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+    AIRFLOW__LOGGING__REMOTE_LOGGING: "True"
+    AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER: "s3://airflow-logs"
+    AIRFLOW__LOGGING__REMOTE_LOG_CONN_ID: "minio_default"
+    AIRFLOW__AWS__DEFAULT_REGION: "us-east-1"
 
   ## a list of users to create
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/security/airflow-users.md
@@ -42,7 +46,23 @@ airflow:
 
   ## a list airflow connections to create
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/dags/airflow-connections.md
-  connections: []
+  connections:
+    - id: minio_default
+      type: aws
+      login: admin
+      password: adminadmin
+      extra: |
+        {
+          "endpoint_url": "http://minio.minio.svc.cluster.local:9000",
+          "aws_access_key_id": "admin",
+          "aws_secret_access_key": "adminadmin",
+          "config_kwargs": {
+            "s3": {
+              "addressing_style": "path"
+            }
+          }
+        }
+
 
   ## a list airflow variables to create
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/dags/airflow-variables.md
@@ -55,7 +75,9 @@ airflow:
   ## extra pip packages to install in airflow Pods
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/configuration/extra-python-packages.md
   ## [WARNING] this feature is not recommended for production use, see docs
-  extraPipPackages: []
+  extraPipPackages:
+    - apache-airflow-providers-amazon
+
 
   ## extra environment variables for the airflow Pods
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/kubernetes/mount-environment-variables.md
@@ -113,8 +135,7 @@ scheduler:
   ## configs for the log-cleanup sidecar of the scheduler
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/monitoring/log-cleanup.md
   logCleanup:
-    enabled: true
-    retentionMinutes: 21600
+    enabled: false
 
   ## configs for the scheduler Pods' liveness probe
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/monitoring/scheduler-liveness-probe.md
@@ -167,6 +188,9 @@ web:
 workers:
   ## if the airflow workers StatefulSet should be deployed
   enabled: false
+  logCleanup:
+    ## WARNING: workers log-cleanup must be disabled if `logs.persistence.enabled` is `true`
+    enabled: false
 
 ###################################
 ## COMPONENT | Triggerer
@@ -208,18 +232,35 @@ logs:
 ## CONFIG | Airflow DAGs
 ###################################
 dags:
-  ## the airflow dags folder
+  ## NOTE: this is the default value
   path: /opt/airflow/dags
-
-  ## configs for the dags PVC
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/dags/load-dag-definitions.md
-  persistence:
-    enabled: false
-
-  ## configs for the git-sync sidecar
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/dags/load-dag-definitions.md
+  
   gitSync:
-    enabled: false
+    enabled: true
+    
+    repo: "https://github.com/NunoRodriguess/dags-digital-hyperion"
+    branch: "main"
+    revision: "HEAD"
+    
+    ## the sub-path within your repo where dags are located
+    ## NOTE: airflow will only see dags under this path, but the whole repo will still be synced
+    #repoSubPath: "path/to/dags"
+    
+    ## number of seconds to wait between syncs
+    ## NOTE: also sets `AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL` unless overwritten in `airflow.config`
+    syncWait: 60
+    
+    ## the max number of seconds allowed for a complete sync
+    ## NOTE: if your repo takes a very long time to sync, you may need to increase this value
+    syncTimeout: 240
+    
+    ## the number of consecutive failures allowed before aborting
+    ## NOTE: if your repo regularly has intermittent failures, you may wish to set a non-0 value
+    #maxFailures: 0
+    
+    httpSecret: "airflow-http-git-secret"
+    httpSecretUsernameKey: username
+    httpSecretPasswordKey: password
 
 ###################################
 ## CONFIG | Kubernetes Ingress

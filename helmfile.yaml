@@ -1,0 +1,82 @@
+---
+# Root Helmfile - Orchestrates Airflow and MinIO deployments
+# K8s cluster with Helm
+
+helmDefaults:
+  atomic: false
+  cleanupOnFail: false
+  recreatePods: false
+  force: false
+
+# Add Helm repositories
+repositories:
+  - name: airflow-stable
+    url: https://airflow-helm.github.io/charts
+  - name: minio
+    url: https://charts.min.io/
+
+# Define releases with dependencies
+releases:
+  # MinIO - Object storage (no dependencies)
+  - name: minio
+    namespace: minio
+    createNamespace: true
+    chart: minio/minio
+    version: "5.0.14"
+    wait: true
+    values:
+      - minio/custom-values.yaml
+    hooks:
+      - events: ["presync"]
+        showlogs: true
+        command: "echo"
+        args: ["Deploying MinIO..."]
+      - events: ["postsync"]
+        showlogs: true
+        command: "bash"
+        args:
+          - "-c"
+          - |
+            echo "MinIO deployment complete. Creating airflow-logs bucket..."
+            kubectl run mc-create-bucket --rm -i --restart=Never \
+              --image=minio/mc:latest \
+              --namespace=minio \
+              --command -- bash -c "
+                mc alias set myminio http://minio.minio.svc.cluster.local:9000 admin adminadmin &&
+                mc mb myminio/airflow-logs --ignore-existing &&
+                echo 'Bucket airflow-logs created successfully'
+              "
+
+  # Apache Airflow - Workflow orchestration (depends on MinIO if configured)
+  - name: airflow
+    namespace: airflow
+    createNamespace: true
+    wait: true
+    chart: airflow-stable/airflow
+    version: "8.9.0"  # Adjust version as needed
+    values:
+      - airflow/custom-values.yaml
+    needs:
+      - minio/minio
+    hooks:
+      - events: ["presync"]
+        showlogs: true
+        command: "bash"
+        args:
+          - "-c"
+          - |
+            echo "Creating Airflow namespace if not exists..."
+            kubectl create namespace airflow --dry-run=client -o yaml | kubectl apply -f -
+            echo "Creating GitHub secret from pat.yaml..."
+            GITHUB_USERNAME=$(grep "username:" pat.yaml | awk '{print $2}')
+            GITHUB_PASSWORD=$(grep "password:" pat.yaml | awk '{print $2}')
+            kubectl create secret generic airflow-http-git-secret \
+              -n airflow \
+              --from-literal=username=$GITHUB_USERNAME \
+              --from-literal=password=$GITHUB_PASSWORD \
+              --dry-run=client -o yaml | kubectl apply -f -
+            echo "Secret created successfully"
+      - events: ["postsync"]
+        showlogs: true
+        command: "echo"
+        args: ["Airflow deployment complete"]
