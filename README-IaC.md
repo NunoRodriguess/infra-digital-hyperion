@@ -8,11 +8,9 @@ This repository contains Helm-based IaC configurations for deploying Digital Hyp
 infra-digital-hyperion/
 ├── helmfile.yaml              # Root helmfile - orchestrates all releases
 ├── airflow/
-│   ├── helmfile.yaml          # Standalone Airflow deployment
 │   ├── custom-values.yaml     # Airflow Helm values
 │   └── comands.md             # Original deployment commands
 ├── minio/
-│   ├── helmfile.yaml          # Standalone MinIO deployment
 │   ├── custom-values.yaml     # MinIO Helm values
 │   ├── comands.md             # Original deployment commands
 │   └── minio_test.py          # MinIO testing script
