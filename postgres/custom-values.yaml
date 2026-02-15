@@ -1,0 +1,30 @@
+# PostgreSQL configuration for Trino Iceberg catalog metadata
+auth:
+  # Database name for Iceberg metadata
+  database: iceberg
+  # Username
+  username: trino
+  # Password (change this in production!)
+  password: trino-secret-password
+  # PostgreSQL admin password
+  postgresPassword: postgres-admin-password
+
+# Primary configuration
+primary:
+  # Resource limits (adjust based on your needs)
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  
+  # Persistence for data
+  persistence:
+    enabled: true
+    size: 4Gi
+
+# Metrics (optional - for monitoring)
+metrics:
+  enabled: false

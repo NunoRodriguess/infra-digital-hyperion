@@ -18,6 +18,8 @@ repositories:
     url: https://trinodb.github.io/charts/
   - name: superset
     url: http://apache.github.io/superset/
+  - name: bitnamilegacy
+    url: https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
 
 # Define releases with dependencies
 releases:
@@ -41,7 +43,8 @@ releases:
         args:
           - "-c"
           - |
-            echo "MinIO deployment complete. Creating airflow-logs bucket..."
+            echo "MinIO deployment complete." 
+            echo "Creating airflow-logs bucket..."
             kubectl run mc-create-bucket --rm -i --restart=Never \
               --image=minio/mc:latest \
               --namespace=minio \
@@ -50,6 +53,58 @@ releases:
                 mc mb myminio/airflow-logs --ignore-existing &&
                 echo 'Bucket airflow-logs created successfully'
               "
+            echo "Creating bronze bucket..."
+            kubectl run mc-create-bucket --rm -i --restart=Never \
+              --image=minio/mc:latest \
+              --namespace=minio \
+              --command -- bash -c "
+                mc alias set myminio http://minio.minio.svc.cluster.local:9000 admin adminadmin &&
+                mc mb myminio/bronze --ignore-existing &&
+                echo 'Bucket bronze created successfully'
+              "
+            echo "Creating silver bucket..."
+            kubectl run mc-create-bucket --rm -i --restart=Never \
+              --image=minio/mc:latest \
+              --namespace=minio \
+              --command -- bash -c "
+                mc alias set myminio http://minio.minio.svc.cluster.local:9000 admin adminadmin &&
+                mc mb myminio/silver --ignore-existing &&
+                echo 'Bucket silver created successfully'
+              "
+            echo "Creating gold bucket..."
+            kubectl run mc-create-bucket --rm -i --restart=Never \
+              --image=minio/mc:latest \
+              --namespace=minio \
+              --command -- bash -c "
+                mc alias set myminio http://minio.minio.svc.cluster.local:9000 admin adminadmin &&
+                mc mb myminio/gold --ignore-existing &&
+                echo 'Bucket gold created successfully'
+              "
+              
+    # PostgreSQL - Metadata store for Trino (depends on nothing)
+  - name: postgres
+    namespace: postgres
+    createNamespace: true
+    chart: bitnamilegacy/postgresql
+    version: "15.5.38"
+    wait: true
+    values:
+      - postgres/custom-values.yaml
+    hooks:
+      - events: ["presync"]
+        showlogs: true
+        command: "echo"
+        args: ["Deploying PostgreSQL for Trino metadata..."]
+      - events: ["postsync"]
+        showlogs: true
+        command: "bash"
+        args:
+          - "-c"
+          - |
+            echo "PostgreSQL deployment complete."
+            echo "Waiting for PostgreSQL to be ready..."
+            kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=postgresql -n postgres --timeout=300s
+            echo "PostgreSQL is ready!"
 
   # Apache Airflow - Workflow orchestration (depends on MinIO if configured)
   - name: airflow
@@ -95,6 +150,7 @@ releases:
       - trino/custom-values.yaml
     needs:
       - minio/minio
+      - postgres/postgres
     hooks:
       - events: ["presync"]
         showlogs: true
