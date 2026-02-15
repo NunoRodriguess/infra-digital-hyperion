@@ -14,6 +14,10 @@ repositories:
     url: https://airflow-helm.github.io/charts
   - name: minio
     url: https://charts.min.io/
+  - name: trino
+    url: https://trinodb.github.io/charts/
+  - name: superset
+    url: http://apache.github.io/superset/
 
 # Define releases with dependencies
 releases:
@@ -80,3 +84,55 @@ releases:
         showlogs: true
         command: "echo"
         args: ["Airflow deployment complete"]
+
+  # TrinoDB - SQL query engine (depends on MinIO if configured)
+  - name: trino
+    namespace: trino
+    createNamespace: true
+    chart: trino/trino
+    version: "1.41.0"
+    values:
+      - trino/custom-values.yaml
+    needs:
+      - minio/minio
+    hooks:
+      - events: ["presync"]
+        showlogs: true
+        command: "bash"
+        args:
+          - "-c"
+          - |
+            echo "Creating Trino namespace if not exists..."
+            kubectl create namespace trino --dry-run=client -o yaml | kubectl apply -f -
+            echo "Creating Superset secret from password.db ..."
+            kubectl create secret generic trino-password-authentication \
+            --from-file=password.db=./trino/custom-values.yaml \
+            -n trino \
+            --dry-run=client -o yaml | kubectl apply -f -      
+      - events: ["postsync"]
+        showlogs: true
+        command: "echo"
+        args: ["TrinoDB deployment complete"]
+
+  # Apache Superset - BI tool (depends on TrinoDB)
+  - name: superset
+    namespace: superset
+    createNamespace: true
+    chart: superset/superset
+    version: "0.15.0"
+    values:
+      - superset/custom-values.yaml
+    needs:
+      - trino/trino
+    hooks:
+      - events: ["presync"]
+        showlogs: true
+        command: "bash"
+        args:
+          - "-c"
+          - |
+            echo "Deploying Superset ..." 
+      - events: ["postsync"]
+        showlogs: true
+        command: "echo"
+        args: ["Superset deployment complete"]
