@@ -18,8 +18,8 @@ repositories:
     url: https://trinodb.github.io/charts/
   - name: superset
     url: http://apache.github.io/superset/
-  - name: bitnamilegacy
-    url: https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
 
 # Define releases with dependencies
 releases:
@@ -85,8 +85,8 @@ releases:
   - name: postgres
     namespace: postgres
     createNamespace: true
-    chart: bitnamilegacy/postgresql
-    version: "15.5.38"
+    chart: bitnami/postgresql
+    version: "18.2.0"
     wait: true
     values:
       - postgres/custom-values.yaml
