@@ -105,6 +105,45 @@ releases:
             echo "Waiting for PostgreSQL to be ready..."
             kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=postgresql -n postgres --timeout=300s
             echo "PostgreSQL is ready!"
+            echo "Granting privileges to trino user and initializing Iceberg schema..."
+            kubectl exec -n postgres postgres-postgresql-0 -- \
+              env PGPASSWORD=postgres-admin-password \
+              psql -U postgres -d iceberg \
+              -c "GRANT ALL PRIVILEGES ON DATABASE iceberg TO trino;" \
+              -c "GRANT ALL PRIVILEGES ON SCHEMA public TO trino;" \
+              -c "ALTER USER trino CREATEDB;" \
+              -c "CREATE TABLE IF NOT EXISTS iceberg_tables (catalog_name VARCHAR(255) NOT NULL, table_namespace VARCHAR(255) NOT NULL, table_name VARCHAR(255) NOT NULL, metadata_location VARCHAR(1000), previous_metadata_location VARCHAR(1000), PRIMARY KEY (catalog_name, table_namespace, table_name));" \
+              -c "CREATE TABLE IF NOT EXISTS iceberg_namespace_properties (catalog_name VARCHAR(255) NOT NULL, namespace VARCHAR(255) NOT NULL, property_key VARCHAR(255), property_value VARCHAR(1000), PRIMARY KEY (catalog_name, namespace, property_key));" \
+              -c "ALTER TABLE iceberg_tables OWNER TO trino;" \
+              -c "ALTER TABLE iceberg_namespace_properties OWNER TO trino;" \
+              -c "GRANT ALL PRIVILEGES ON TABLE iceberg_tables TO trino;" \
+              -c "GRANT ALL PRIVILEGES ON TABLE iceberg_namespace_properties TO trino;"
+            echo "Iceberg schema initialized successfully!"
+
+  # # Apache Spark - Distributed processing
+  # - name: spark
+  #   namespace: spark
+  #   createNamespace: true
+  #   chart: bitnami/spark
+  #   version: "6.6.3"
+  #   wait: true
+  #   values:
+  #     - spark/custom-values.yaml
+  #   hooks:
+  #     - events: ["presync"]
+  #       showlogs: true
+  #       command: "echo"
+  #       args: ["Deploying Spark..."]
+  #     - events: ["postsync"]
+  #       showlogs: true
+  #       command: "bash"
+  #       args:
+  #         - "-c"
+  #         - |
+  #           echo "Spark deployment complete."
+  #           echo "Waiting for Spark to be ready..."
+  #           kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=spark -n spark --timeout=600s
+  #           echo "Spark is ready!"
 
   # Apache Airflow - Workflow orchestration (depends on MinIO if configured)
   - name: airflow

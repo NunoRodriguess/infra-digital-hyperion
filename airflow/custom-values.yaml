@@ -8,8 +8,9 @@ airflow:
   ## configs for the airflow container image
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/configuration/airflow-version.md
   image:
-    repository: apache/airflow
-    tag: 2.8.4-python3.9
+    repository: nunorodriguess/airflow-hyperion
+    tag: 3.0.0
+    pullPolicy: IfNotPresent
 
   ## the airflow executor type to use
   executor: KubernetesExecutor
@@ -62,8 +63,16 @@ airflow:
             }
           }
         }
-
-
+    - id: trino_default
+      type: trino
+      host: trino.trino.svc.cluster.local
+      port: 8080
+      login: trino
+      schema: ""
+      extra: |
+        {
+          "auth": "None"
+        }
   ## a list airflow variables to create
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/dags/airflow-variables.md
   variables: []
@@ -77,6 +86,8 @@ airflow:
   ## [WARNING] this feature is not recommended for production use, see docs
   extraPipPackages:
     - apache-airflow-providers-amazon
+    - apache-airflow-providers-trino>=5.7.0
+    - apache-airflow-providers-apache-spark
 
 
   ## extra environment variables for the airflow Pods
@@ -109,7 +120,10 @@ airflow:
     ## extra pip packages to install in the Pod template
     ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/configuration/extra-python-packages.md
     ## [WARNING] this feature is not recommended for production use, see docs
-    extraPipPackages: []
+    extraPipPackages:
+      - apache-airflow-providers-amazon
+      - apache-airflow-providers-trino>=5.7.0
+      - apache-airflow-providers-apache-spark
 
     ## extra VolumeMounts for the Pod template
     ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/kubernetes/mount-persistent-volumes.md
