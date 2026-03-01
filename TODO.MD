@@ -1,3 +1,4 @@
-- Implement Spark for distributed data processing and integrate it with Airflow for orchestrating Spark jobs.
+- Experiment with SparkNLP
+- Adress on how to keep the data in MINIO persistent across deployments and how to handle data backup and recovery.
 - Set up a CI/CD pipeline to automate the deployment of Airflow, MinIO, Trino, Spark and Superset using Helm and Helmfile.
 - Implement monitoring and alerting for the deployed services using Prometheus and Grafana.
