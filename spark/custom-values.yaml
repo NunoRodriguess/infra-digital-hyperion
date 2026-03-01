@@ -295,16 +295,11 @@ master:
   ## @param master.tolerations Spark master tolerations for pod assignment
   ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
   ##
-  tolerations: []
-  ## @param master.updateStrategy.type Master statefulset strategy type.
-  ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
-  ## e.g:
-  ## updateStrategy:
-  ##  type: RollingUpdate
-  ##  rollingUpdate:
-  ##    maxSurge: 25%
-  ##    maxUnavailable: 25%
-  ##
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+
   updateStrategy:
     type: RollingUpdate
   ## @param master.priorityClassName master pods' priorityClassName
@@ -343,7 +338,7 @@ master:
   ## @param master.resourcesPreset Set container resources according to one common preset (allowed values: none, nano, micro, small, medium, large, xlarge, 2xlarge). This is ignored if master.resources is set (master.resources is recommended for production).
   ## More information: https://github.com/bitnami/charts/blob/main/bitnami/common/templates/_resources.tpl#L15
   ##
-  resourcesPreset: "small"
+  # resourcesPreset: "small"
   ## @param master.resources Set container requests and limits for different resources like CPU or memory (essential for production workloads)
   ## Example:
   ## resources:
@@ -354,7 +349,13 @@ master:
   ##     cpu: 3
   ##     memory: 1024Mi
   ##
-  resources: {}
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
   ## Configure extra options for liveness probe
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
   ## @param master.livenessProbe.enabled Enable livenessProbe
@@ -538,10 +539,10 @@ worker:
   daemonMemoryLimit: ""
   ## @param worker.memoryLimit Set the maximum memory the worker is allowed to use
   ##
-  memoryLimit: ""
+  memoryLimit: "5G"
   ## @param worker.coreLimit Se the maximum number of cores that the worker can use
   ##
-  coreLimit: ""
+  coreLimit: "6"
   ## @param worker.dir Set a custom working directory for the application
   ##
   dir: ""
@@ -590,7 +591,7 @@ worker:
   extraEnvVarsSecret: ""
   ## @param worker.replicaCount Number of spark workers (will be the minimum number when autoscaling is enabled)
   ##
-  replicaCount: 2
+  replicaCount: 1
   ## Kubernetes Pods Security Context
   ## https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
   ## @param worker.podSecurityContext.enabled Enable security context
@@ -684,16 +685,11 @@ worker:
   ## @param worker.tolerations Spark worker tolerations for pod assignment
   ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
   ##
-  tolerations: []
-  ## @param worker.updateStrategy.type Worker statefulset strategy type.
-  ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
-  ## e.g:
-  ## updateStrategy:
-  ##  type: RollingUpdate
-  ##  rollingUpdate:
-  ##    maxSurge: 25%
-  ##    maxUnavailable: 25%
-  ##
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+
   updateStrategy:
     type: RollingUpdate
   ## @param worker.podManagementPolicy Statefulset Pod Management Policy Type
@@ -736,7 +732,13 @@ worker:
   ## @param worker.resourcesPreset Set container resources according to one common preset (allowed values: none, nano, micro, small, medium, large, xlarge, 2xlarge). This is ignored if worker.resources is set (worker.resources is recommended for production).
   ## More information: https://github.com/bitnami/charts/blob/main/bitnami/common/templates/_resources.tpl#L15
   ##
-  resourcesPreset: "small"
+  resources:
+    requests:
+      cpu: "4"
+      memory: "4G"
+    limits:
+      cpu: "6"
+      memory: "6G"
   ## @param worker.resources Set container requests and limits for different resources like CPU or memory (essential for production workloads)
   ## Example:
   ## resources:
@@ -747,7 +749,6 @@ worker:
   ##     cpu: 3
   ##     memory: 1024Mi
   ##
-  resources: {}
   ## Configure extra options for liveness probe
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
   ## @param worker.livenessProbe.enabled Enable livenessProbe

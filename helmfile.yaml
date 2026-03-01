@@ -80,7 +80,6 @@ releases:
                 mc mb myminio/gold --ignore-existing &&
                 echo 'Bucket gold created successfully'
               "
-              
     # PostgreSQL - Metadata store for Trino (depends on nothing)
   - name: postgres
     namespace: postgres
@@ -120,31 +119,62 @@ releases:
               -c "GRANT ALL PRIVILEGES ON TABLE iceberg_namespace_properties TO trino;"
             echo "Iceberg schema initialized successfully!"
 
-  # # Apache Spark - Distributed processing
-  # - name: spark
-  #   namespace: spark
-  #   createNamespace: true
-  #   chart: bitnami/spark
-  #   version: "6.6.3"
-  #   wait: true
-  #   values:
-  #     - spark/custom-values.yaml
-  #   hooks:
-  #     - events: ["presync"]
-  #       showlogs: true
-  #       command: "echo"
-  #       args: ["Deploying Spark..."]
-  #     - events: ["postsync"]
-  #       showlogs: true
-  #       command: "bash"
-  #       args:
-  #         - "-c"
-  #         - |
-  #           echo "Spark deployment complete."
-  #           echo "Waiting for Spark to be ready..."
-  #           kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=spark -n spark --timeout=600s
-  #           echo "Spark is ready!"
-
+  # Apache Spark - Distributed processing
+  - name: spark
+    namespace: spark
+    createNamespace: true
+    chart: bitnami/spark
+    version: "6.6.3"
+    wait: true
+    values:
+      - spark/custom-values.yaml
+    needs:
+      - minio/minio
+      - postgres/postgres
+    hooks:
+      - events: ["presync"]
+        showlogs: true
+        command: "bash"
+        args:
+          - "-c"
+          - |
+            echo "Creating spark-jobs ConfigMap from local jobs folder..."
+            kubectl create namespace spark --dry-run=client -o yaml | kubectl apply -f -
+            kubectl create configmap spark-jobs \
+              --from-file=spark/jobs/ \
+              -n minio \
+              --dry-run=client -o yaml | kubectl apply -f -
+            echo "ConfigMap created!"
+      - events: ["postsync"]
+        showlogs: true
+        command: "bash"
+        args:
+          - "-c"
+          - |
+            echo "Spark deployment complete."
+            echo "Waiting for Spark to be ready..."
+            kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=spark -n spark --timeout=600s
+            echo "Spark is ready!"
+            echo "Uploading Spark jobs to MinIO..."
+            kubectl run mc-upload-jobs --rm -i --restart=Never \
+              --image=minio/mc:latest \
+              --namespace=minio \
+              --overrides='{
+                "spec": {
+                  "volumes": [{
+                    "name": "jobs",
+                    "configMap": {"name": "spark-jobs"}
+                  }],
+                  "containers": [{
+                    "name": "mc-upload-jobs",
+                    "image": "minio/mc:latest",
+                    "command": ["bash", "-c"],
+                    "args": ["mc alias set myminio http://minio.minio.svc.cluster.local:9000 admin adminadmin && mc cp /jobs/ myminio/job/ --recursive && echo Jobs uploaded successfully"],
+                    "volumeMounts": [{"name": "jobs", "mountPath": "/jobs"}]
+                  }]
+                }
+              }'
+            echo "Jobs uploaded!"
   # Apache Airflow - Workflow orchestration (depends on MinIO if configured)
   - name: airflow
     namespace: airflow
