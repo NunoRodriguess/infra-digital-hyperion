@@ -261,3 +261,39 @@ releases:
         showlogs: true
         command: "echo"
         args: ["Superset deployment complete"]
+      - events: ["postsync"]
+        showlogs: true
+        command: "bash"
+        args:
+          - "-c"
+          - |
+            set -e
+
+            echo "Waiting for Superset deployment to be ready..."
+            kubectl rollout status deploy/superset -n superset --timeout=300s
+
+            echo "Creating dashboards ConfigMap..."
+            kubectl create configmap superset-dashboards \
+              --from-file=superset/dashboards/ \
+              -n superset \
+              --dry-run=client -o yaml | kubectl apply -f -
+
+            echo "Getting Superset pod name..."
+            SUPERSET_POD=$(kubectl get pods -n superset \
+              -l app=superset \
+              -o jsonpath="{.items[?(@.status.phase=='Running')].metadata.name}" | head -n 1)
+
+            echo "Superset pod: $SUPERSET_POD"
+
+            echo "Copying dashboards into Superset pod..."
+            kubectl cp superset/dashboards/. superset/$SUPERSET_POD:/tmp/dashboards
+
+            echo "Importing dashboards..."
+            kubectl exec -n superset $SUPERSET_POD -- bash -c '
+              for file in /tmp/dashboards/*.zip; do
+                echo "Importing $file"
+                superset import-dashboards -p $file -u admin
+              done
+            '
+
+            echo "Dashboard import completed successfully."

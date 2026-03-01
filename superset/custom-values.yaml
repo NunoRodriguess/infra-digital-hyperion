@@ -127,19 +127,26 @@ extraSecretEnv:
   #  SUPERSET_SECRET_KEY: 'CHANGE_ME_TO_A_COMPLEX_RANDOM_SECRET'
 
 # -- Extra files to be mounted as ConfigMap on the path specified in `extraConfigMountPath`
-extraConfigs: {}
-  # import_datasources.yaml: |
-  #     databases:
-  #     - allow_file_upload: true
-  #       allow_ctas: true
-  #       allow_cvas: true
-  #       database_name: example-db
-  #       extra: "{\r\n    \"metadata_params\": {},\r\n    \"engine_params\": {},\r\n    \"\
-  #         metadata_cache_timeout\": {},\r\n    \"schemas_allowed_for_file_upload\": []\r\n\
-  #         }"
-  #       sqlalchemy_uri: example://example-db.local
-  #       tables: []
+extraConfigs:
+  import_datasources.yaml: |
+    databases:
+      - database_name: trino-bronze
+        sqlalchemy_uri: trino://trino@trino.trino.svc.cluster.local:8080/bronze
+        expose_in_sqllab: true
+        allow_ctas: true
+        allow_cvas: true
 
+      - database_name: trino-silver
+        sqlalchemy_uri: trino://trino@trino.trino.svc.cluster.local:8080/silver
+        expose_in_sqllab: true
+        allow_ctas: true
+        allow_cvas: true
+
+      - database_name: trino-gold
+        sqlalchemy_uri: trino://trino@trino.trino.svc.cluster.local:8080/gold
+        expose_in_sqllab: true
+        allow_ctas: true
+        allow_cvas: true
 # -- Extra files to be mounted as Secrets on the path specified in `configMountPath`
 extraSecrets: {}
 
