@@ -1,21 +1,25 @@
-# Custom image for airflow
-
-FROM apache/airflow:2.8.4-python3.9
+FROM apache/airflow:2.8.4-python3.8
 
 USER root
 
-RUN apt-get update -y && \
-    apt-get install -y wget apt-transport-https gnupg && \
-    wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor -o /etc/apt/trusted.gpg.d/adoptium.gpg && \
-    echo "deb https://packages.adoptium.net/artifactory/deb $(. /etc/os-release && echo $VERSION_CODENAME) main" \
-        > /etc/apt/sources.list.d/adoptium.list && \
-    apt-get update -y && \
-    apt-get install -y temurin-8-jdk
+# Install OpenJDK 17 and required tools
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        openjdk-17-jdk \
+        ant \
+        curl \
+        ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-ENV JAVA_HOME=/usr/lib/jvm/temurin-8-arm64
+# Set JAVA_HOME properly for arm64 (mac users)
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-arm64
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
+# Switch back to airflow user
 USER airflow
 
-# Install Spark + Spark NLP
-RUN pip install spark-nlp==6.3.2 pyspark==3.3.1
+COPY requirements.txt /
+
+# Install Python dependencies
+RUN pip install --no-cache-dir "apache-airflow==${AIRFLOW_VERSION}" -r /requirements.txt

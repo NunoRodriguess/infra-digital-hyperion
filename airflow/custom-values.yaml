@@ -9,7 +9,7 @@ airflow:
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/configuration/airflow-version.md
   image:
     repository: nunorodriguess/airflow-hyperion
-    tag: 3.0.0
+    tag: 0.0.8
     pullPolicy: IfNotPresent
 
   ## the airflow executor type to use
@@ -73,6 +73,11 @@ airflow:
         {
           "auth": "None"
         }
+    - id: spark_default
+      type: spark
+      host: spark://spark-master-svc.spark.svc.cluster.local
+      port: 7077
+      
   ## a list airflow variables to create
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/dags/airflow-variables.md
   variables: []
@@ -84,11 +89,7 @@ airflow:
   ## extra pip packages to install in airflow Pods
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/configuration/extra-python-packages.md
   ## [WARNING] this feature is not recommended for production use, see docs
-  extraPipPackages:
-    - apache-airflow-providers-amazon
-    - apache-airflow-providers-trino>=5.7.0
-    - apache-airflow-providers-apache-spark
-
+  extraPipPackages: []
 
   ## extra environment variables for the airflow Pods
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/kubernetes/mount-environment-variables.md
@@ -108,7 +109,6 @@ airflow:
   ## [NOTE] the `dags.gitSync` values will create a git-sync init-container in the pod
   ## [NOTE] the `airflow.extraPipPackages` will NOT be installed
   kubernetesPodTemplate:
-
     ## the full content of the pod-template file (as a string)
     ## [NOTE] all other `kubernetesPodTemplate.*` are disabled when this is set
     stringOverride: ""
@@ -120,10 +120,7 @@ airflow:
     ## extra pip packages to install in the Pod template
     ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/configuration/extra-python-packages.md
     ## [WARNING] this feature is not recommended for production use, see docs
-    extraPipPackages:
-      - apache-airflow-providers-amazon
-      - apache-airflow-providers-trino>=5.7.0
-      - apache-airflow-providers-apache-spark
+    extraPipPackages: []
 
     ## extra VolumeMounts for the Pod template
     ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/kubernetes/mount-persistent-volumes.md
