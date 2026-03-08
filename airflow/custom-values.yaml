@@ -9,7 +9,7 @@ airflow:
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/configuration/airflow-version.md
   image:
     repository: nunorodriguess/airflow-hyperion
-    tag: 0.0.8
+    tag: 0.0.14 # 0.0.10> for amd64 and 0.0.8 for arm64
     pullPolicy: IfNotPresent
 
   ## the airflow executor type to use
@@ -77,6 +77,9 @@ airflow:
       type: spark
       host: spark://spark-master-svc.spark.svc.cluster.local
       port: 7077
+    - id: spark_local
+      type: spark
+      host: local
       
   ## a list airflow variables to create
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/dags/airflow-variables.md
