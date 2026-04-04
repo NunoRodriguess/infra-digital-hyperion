@@ -178,6 +178,10 @@ configOverrides:
     }
     HTML_SANITIZATION = False
     TALISMAN_ENABLED = False
+  public_role: |
+    from superset.security import SupersetSecurityManager
+    PUBLIC_ROLE_LIKE = "Gamma"
+
 # -- Same as above but the values are files
 configOverridesFiles: {}
   # extend_timeout: extend_timeout.py
@@ -203,7 +207,6 @@ service:
   type: ClusterIP
   port: 8088
   annotations: {}
-    # cloud.google.com/load-balancer-type: "Internal"
   loadBalancerIP: ~
   nodePort:
     # -- (int)
