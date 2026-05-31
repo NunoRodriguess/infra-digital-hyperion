@@ -9,7 +9,7 @@ airflow:
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/configuration/airflow-version.md
   image:
     repository: nunorodriguess/airflow-hyperion
-    tag: 0.0.14 # 0.0.10> for amd64 and 0.0.8 for arm64
+    tag: 0.0.18-gpu # 0.0.10> for amd64 and 0.0.8 for arm64
     pullPolicy: IfNotPresent
 
   ## the airflow executor type to use

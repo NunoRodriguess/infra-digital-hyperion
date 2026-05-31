@@ -3,3 +3,6 @@ apache-airflow-providers-trino>=5.7.0
 apache-airflow-providers-apache-spark
 pyspark==3.3.2
 spark-nlp==6.3.2
+langdetect==1.0.9
+reverse-geocode==1.6.6
+geopy==2.4.0

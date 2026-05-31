@@ -109,7 +109,7 @@ diagnosticMode:
 image:
   registry: docker.io
   repository: nunorodriguess/spark-hyperion
-  tag: 3.3.2
+  tag: "3.3.2-gold"
   digest: ""
   ## Specify a imagePullPolicy
   ## ref: https://kubernetes.io/docs/concepts/containers/images/#pre-pulled-images

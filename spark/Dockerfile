@@ -18,4 +18,10 @@ RUN apt-get update && apt-get install -y curl && \
         https://repo1.maven.org/maven2/com/johnsnowlabs/nlp/spark-nlp_2.12/6.3.2/spark-nlp_2.12-6.3.2.jar && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Install Python packages for Spark jobs
+RUN pip install --no-cache-dir \
+    langdetect==1.0.9 \
+    reverse-geocode==1.6.6 \
+    geopy==2.4.0
+    
 USER 1001

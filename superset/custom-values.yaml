@@ -54,22 +54,19 @@ serviceAccount:
 
 bootstrapScript: |
   #!/bin/bash
-  # Install system-level dependencies
   apt-get update && apt-get install -y \
     python3-dev \
     default-libmysqlclient-dev \
     build-essential \
     pkg-config
 
-  # Install required Python packages
   uv pip install \
     authlib \
     psycopg2-binary \
     mysqlclient \
     sqlalchemy-trino \
-    "apache-superset[trino]" \
+    trino[sqlalchemy]
 
-  # Create bootstrap file if it doesn't exist
   if [ ! -f ~/bootstrap ]; then
     echo "Running Superset with uid {{ .Values.runAsUser }}" > ~/bootstrap
   fi
@@ -738,7 +735,7 @@ init:
     firstname: Superset
     lastname: Admin
     email: admin@superset.com
-    password: admin
+    password: portoportoporto
   # -- List of initContainers
   # @default -- a container waiting for postgres
   initContainers:

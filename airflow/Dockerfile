@@ -2,13 +2,16 @@ FROM apache/airflow:2.8.4-python3.8
 
 USER root
 
-# Install OpenJDK 17 and required tools
+# Install OpenJDK 17, required tools, and C++ compiler for Python extensions
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         openjdk-17-jdk \
         ant \
         curl \
-        ca-certificates && \
+        ca-certificates \
+        g++ \
+        gcc \
+        python3-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -29,7 +32,9 @@ RUN mkdir -p /opt/spark/jars && \
     curl -fsSL -o /opt/spark/jars/postgresql-42.6.0.jar \
         https://repo1.maven.org/maven2/org/postgresql/postgresql/42.6.0/postgresql-42.6.0.jar && \
     curl -fsSL -o /opt/spark/jars/spark-nlp-assembly-6.3.2.jar \
-        https://s3.amazonaws.com/auxdata.johnsnowlabs.com/public/jars/spark-nlp-assembly-6.3.2.jar
+        https://s3.amazonaws.com/auxdata.johnsnowlabs.com/public/jars/spark-nlp-assembly-6.3.2.jar && \
+    curl -fsSL -o /opt/spark/jars/spark-nlp-gpu-assembly-6.3.2.jar \
+        https://s3.amazonaws.com/auxdata.johnsnowlabs.com/public/jars/spark-nlp-gpu-assembly-6.3.2.jar
 
 # Switch back to airflow user
 USER airflow
