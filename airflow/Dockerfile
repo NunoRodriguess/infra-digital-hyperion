@@ -36,6 +36,11 @@ RUN mkdir -p /opt/spark/jars && \
     curl -fsSL -o /opt/spark/jars/spark-nlp-gpu-assembly-6.3.2.jar \
         https://s3.amazonaws.com/auxdata.johnsnowlabs.com/public/jars/spark-nlp-gpu-assembly-6.3.2.jar
 
+RUN curl -fsSL -o /opt/spark/jars/spark-nlp-gpu-assembly-6.4.1.jar \
+        https://s3.amazonaws.com/auxdata.johnsnowlabs.com/public/jars/spark-nlp-gpu-assembly-6.4.1.jar
+
+RUN curl -fsSL -o /opt/spark/jars/spark-nlp-assembly-6.4.1.jar \
+        https://s3.amazonaws.com/auxdata.johnsnowlabs.com/public/jars/spark-nlp-assembly-6.4.1.jar
 # Switch back to airflow user
 USER airflow
 

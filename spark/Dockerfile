@@ -16,6 +16,8 @@ RUN apt-get update && apt-get install -y curl && \
         https://repo1.maven.org/maven2/org/postgresql/postgresql/42.6.0/postgresql-42.6.0.jar && \
     curl -fsSL -o /opt/bitnami/spark/jars/spark-nlp_2.12-6.3.2.jar \
         https://repo1.maven.org/maven2/com/johnsnowlabs/nlp/spark-nlp_2.12/6.3.2/spark-nlp_2.12-6.3.2.jar && \
+    curl -fsSL -o /opt/bitnami/spark/jars/spark-nlp_2.12-6.4.1.jar \
+        https://repo1.maven.org/maven2/com/johnsnowlabs/nlp/spark-nlp_2.12/6.4.1/spark-nlp_2.12-6.4.1.jar && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Python packages for Spark jobs
